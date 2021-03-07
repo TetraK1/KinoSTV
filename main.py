@@ -1,7 +1,9 @@
-from collections import namedtuple
+from typing import NamedTuple
 import json
 
-WeightedBallot = namedtuple('WeightedBallot', ('weight', 'ranking'))
+class WeightedBallot(NamedTuple):
+    weight: float
+    ranking: tuple[str]
 
 def get_droop_quota(seats: int, ballot_count: int) -> float:
     return ballot_count / (seats + 1)
@@ -16,7 +18,7 @@ def tally_first_place_votes(candidates: tuple[str], ballots) -> dict[str, int]:
 def stv(seats: int, candidates: tuple[str], ballots: tuple[tuple[str]], quota=get_droop_quota):
     ballots = tuple(WeightedBallot(1, ballot) for ballot in ballots)
 
-    while True:
+    #while True:
         # Round step order should be something like
         # 1. Tally
         # 2. Eliminate a candidate
