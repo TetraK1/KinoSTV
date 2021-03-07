@@ -26,15 +26,17 @@ class WeightedBallots(NamedTuple):
             tuple(ballot.remove_winner(winner, weight_frac) for ballot in self.ballots)
         )
 
+    def tally_first_place(self, candidates):
+        '''Return a dict tallying the first choice votes for each candidate.'''
+        first_place_ballots = tuple(ballot.ranking[0] for ballot in self.ballots if len(ballot.ranking) > 0)
+        tally = {candidate: first_place_ballots.count(candidate) for candidate in candidates}
+        tally = {candidate: tally[candidate] for candidate in sorted(tally, key= lambda x: tally[x], reverse=True)}
+        return tally
+
+
 def get_droop_quota(seats: int, ballot_count: int) -> float:
     return ballot_count / (seats + 1)
 
-def tally_first_place_votes(candidates: tuple[str], ballots) -> dict[str, int]:
-    '''Return a dict tallying the first choice votes for each candidate.'''
-    first_place_ballots = tuple(ballot.ranking[0] for ballot in ballots if len(ballot.ranking) > 0)
-    tally = {candidate: first_place_ballots.count(candidate) for candidate in candidates}
-    tally = {candidate: tally[candidate] for candidate in sorted(tally, key= lambda x: tally[x], reverse=True)}
-    return tally
 
 def remove_candidate(candidate: str, ballots: tuple[WeightedBallot]):
     '''Remove a candidate from all ballots in a tuple of WeightedBallot'''
@@ -46,7 +48,7 @@ def remove_winner(winner: str, vote_frac: int, ballots: tuple[WeightedBallot]):
 
 
 def stv(seats: int, candidates: tuple[str], ballots: tuple[tuple[str]], quota=get_droop_quota):
-    ballots = tuple(WeightedBallot(1, ballot) for ballot in ballots)
+    ballots = WeightedBallots(tuple(WeightedBallot(1, ballot) for ballot in ballots))
 
     #while True:
         # Round step order should be something like
@@ -61,7 +63,7 @@ def stv(seats: int, candidates: tuple[str], ballots: tuple[tuple[str]], quota=ge
         # candidates
         # Want to attempt to keep it as close to functional as possible so that
         # round history can be recorded
-    tally = tally_first_place_votes(candidates, ballots)
+    tally = ballots.tally_first_place(candidates)
     quota = quota(seats, sum(candidate_tally for candidate_tally in tally.values()))
 
     if max(tally.values()) > quota:
@@ -69,8 +71,8 @@ def stv(seats: int, candidates: tuple[str], ballots: tuple[tuple[str]], quota=ge
     else:
         pass
 
-    nb = remove_winner("Candidate 7", 0.5, ballots)
-    for b in nb[:5]:
+    nb = ballots.remove_winner("Candidate 7", 0.5)
+    for b in nb.ballots[:5]:
         print(b.weight, b.ranking)
     
 
